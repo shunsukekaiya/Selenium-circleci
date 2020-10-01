@@ -1,32 +1,49 @@
-import pytest
+# -*- coding: utf-8 -*-
 from selenium import webdriver
-from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.ui import Select
+from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import NoAlertPresentException
+import unittest, time, re
 
-class TestGoogle:
-
-    driver = webdriver.Chrome(ChromeDriverManager().install())
-
-    def setup_class(cls):
-        cls.driver = webdriver.Chrome(ChromeDriverManager().install())
-        cls.driver.maximize_window()
-
-    def setup_method(self):
-        self.driver.get("https://google.com")
-
-    def test_case(self):
+class WebdriverSample(unittest.TestCase):
+    def setUp(self):
+        self.driver = webdriver.Firefox()
+        self.driver.implicitly_wait(10)
+        self.base_url = "https://google.com"
+        self.verificationErrors = []
+        self.accept_next_alert = True
+    
+    def test_webdriver_sample(self):
         driver = self.driver
+        driver.get(self.base_url + "/")
+        self.assertEqual("Google", driver.title)
+    
+    def is_element_present(self, how, what):
+        try: self.driver.find_element(by=how, value=what)
+        except NoSuchElementException as e: return False
+        return True
+    
+    def is_alert_present(self):
+        try: self.driver.switch_to_alert()
+        except NoAlertPresentException as e: return False
+        return True
+    
+    def close_alert_and_get_its_text(self):
+        try:
+            alert = self.driver.switch_to_alert()
+            alert_text = alert.text
+            if self.accept_next_alert:
+                alert.accept()
+            else:
+                alert.dismiss()
+            return alert_text
+        finally: self.accept_next_alert = True
+    
+    def tearDown(self):
+        self.driver.quit()
+        self.assertEqual([], self.verificationErrors)
 
-        driver.save_screenshot("test-reports/result_001.png")
-
-        driver.find_element_by_css_selector("#tsf > div:nth-child(2) > div > div.RNNXgb > div > div.a4bIc > input").send_keys("hoge")
-
-        driver.save_screenshot("test-reports/result_002.png")
-
-        driver.find_element_by_css_selector("#tsf > div:nth-child(2) > div > div.FPdoLc.VlcLAe > center > input.gNO89b").click()
-
-        driver.save_screenshot("test-reports/result_003.png")
-
-        assert driver.title.count('hoge'), "ページタイトルにhogeが含まれていること"
-
-    def teardown_class(cls):
-        cls.driver.quit()
+if __name__ == "__main__":
+    unittest.main()
